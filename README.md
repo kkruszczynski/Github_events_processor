@@ -8,8 +8,7 @@ This project is dedicated to process Github events for specific period of time. 
 	
 ## Technologies
 Project is created with:
-* Python 3.8
-
+* Python 3.8 using Pandas
 	
 ## Setup
 To run this project on Windows following steps are needed:
@@ -20,4 +19,11 @@ To run this project on Windows following steps are needed:
 $ download_data.sh
 ```
 Remember to not upload raw data to GitHub repository
-4. Run the process_data.py
+
+4. Setup *config_file.json* file
+
+5. Run following script in Python Console
+
+```
+github_events_processor.py
+```
