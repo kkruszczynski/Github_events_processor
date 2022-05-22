@@ -2,7 +2,7 @@
 "year":2022,
 "month":1,
 "start_day":1,
-"end_day":2,
+"end_day":31,
 "repository_data_file_name":"repo_summary.csv",
 "user_data_file_name":"user_summary.csv"
 }

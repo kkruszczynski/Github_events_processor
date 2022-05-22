@@ -18,11 +18,11 @@ To run this project on Windows following steps are needed:
 ```
 $ download_data.sh
 ```
-Remember to not upload raw data to GitHub repository
+4. Create *.rawData* folder in the folder where script is going to be run and paste there downloaded data. Remember to not upload raw data to GitHub repository
 
-4. Setup *config_file.json* file
+5. Setup *config_file.json* file
 
-5. Run following script in Python Console
+6. Run following script in Python Console
 
 ```
 github_events_processor.py

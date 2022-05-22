@@ -22,16 +22,17 @@ if __name__ == "__main__":
     # Define names for DataFrame columns. Optimize this layout later.
     # In general code below should be reorganized into classes and methods
     hours_start = 0
-    hours_end = 2 #max=23
+    hours_end = 2  # max=23
     config_file = read_json_data("config_file.json")
     raw_df_columns = ['id', 'type', 'actor', 'repo', 'payload', 'public', 'created_at',
                       'org', 'project_id', 'project_name', 'user_id', 'user_name']
     event_columns_map = {"StarEvent": 'stars', "ForkEvent": 'forks', "IssueEvent": 'issues', "PullRequestEvent": 'PRs'}
-    events_list = ["StarEvent", "ForkEvent", "IssueEvent", "PullRequestEvent"]
-    repo_aggreated_columns = ['Date', 'project_id', 'project_name', 'stars', 'forks', 'issues', 'PRs']
-    user_aggreated_columns = ['Date', 'user_id', 'user_name', 'stars', 'issues', 'PRs']
-    repo_aggregated_df = pd.DataFrame(columns=repo_aggreated_columns)
-    user_aggregated_df = pd.DataFrame(columns=user_aggreated_columns)
+    repo_events_list = ["StarEvent", "ForkEvent", "IssueEvent", "PullRequestEvent"]
+    user_events_list = ["StarEvent", "IssueEvent", "PullRequestEvent"]
+    repo_aggregated_columns = ['Date', 'project_id', 'project_name', 'stars', 'forks', 'issues', 'PRs']
+    user_aggregated_columns = ['Date', 'user_id', 'user_name', 'stars', 'issues', 'PRs']
+    master_repo_aggregated_df = pd.DataFrame(columns=repo_aggregated_columns)
+    master_user_aggregated_df = pd.DataFrame(columns=user_aggregated_columns)
 
     # iterate over particular rawData files
     for i in range(config_file["start_day"], config_file["end_day"] + 1):
@@ -54,23 +55,25 @@ if __name__ == "__main__":
             except Exception as e:
                 print(f"Not able to process file {path_to_data}")
 
-        repo_grouped_df_raw = aggregated_df.groupby(["project_name", "type"])
-        repo_grouped_df = aggregated_df.groupby(["project_name", "type"]).count()
-
-        user_grouped_df_raw = aggregated_df.groupby(["user_name", "type"])
-        user_grouped_df = aggregated_df.groupby(["user_name", "type"]).count()
-
         aggregated_df["Date"] = f"{config_file['year']}-0{config_file['month']}-{i}"
         aggregated_df["forks"] = 0
         aggregated_df["stars"] = 0
         aggregated_df["issues"] = 0
         aggregated_df["PRs"] = 0
-        repo_index_left = [repo_grouped_df.index[i] for i in range(0, len(repo_grouped_df.index)) if
-                           repo_grouped_df.index[i][1] in events_list]
-        user_index_left = [user_grouped_df.index[i] for i in range(0, len(user_grouped_df.index)) if
-                           user_grouped_df.index[i][1] in events_list]
+
+        repo_grouped_df_raw = aggregated_df.groupby(["project_name", "type"])
+        repo_grouped_df = aggregated_df.groupby(["project_name", "type"]).count()
         # Need to find solution without copying data
         aggregated_user_df = copy.deepcopy(aggregated_df)
+
+        user_grouped_df_raw = aggregated_user_df.groupby(["user_name", "type"])
+        user_grouped_df = aggregated_user_df.groupby(["user_name", "type"]).count()
+
+        repo_index_left = [repo_grouped_df.index[i] for i in range(0, len(repo_grouped_df.index)) if
+                           repo_grouped_df.index[i][1] in repo_events_list]
+        user_index_left = [user_grouped_df.index[i] for i in range(0, len(user_grouped_df.index)) if
+                           user_grouped_df.index[i][1] in user_events_list]
+        # Try to avoid looping here (Pretty time consuming)
         for item in repo_index_left:
             try:
                 occurences = repo_grouped_df_raw.get_group(item).shape[0]
@@ -81,19 +84,21 @@ if __name__ == "__main__":
         # Copy/Paste of solution above. Here is place for improvement
         for item_user in user_index_left:
             try:
-                occurences = user_grouped_df_raw.get_group(item_user).shape[0]
+                user_occurences = user_grouped_df_raw.get_group(item_user).shape[0]
                 aggregated_user_df.loc[
-                    aggregated_user_df["user_name"] == item[0], event_columns_map[item[1]]] = occurences
+                    aggregated_user_df["user_name"] == item_user[0], event_columns_map[item_user[1]]] = user_occurences
             except Exception as e:
-                print(f"{item} not added to the report")
+                print(f"{item_user} not added to the report")
                 continue
         aggregated_df.drop_duplicates(subset='project_name', keep='first', inplace=True)
         aggregated_df.reset_index(drop=True, inplace=True)
-        repo_aggregated_df = pd.concat([repo_aggregated_df, aggregated_df], join='inner')
+        master_repo_aggregated_df = pd.concat([master_repo_aggregated_df, aggregated_df], join='inner')
 
         aggregated_user_df.drop_duplicates(subset='user_name', keep='first', inplace=True)
         aggregated_user_df.reset_index(drop=True, inplace=True)
-        user_aggregated_df = pd.concat([user_aggregated_df, aggregated_user_df], join='inner')
+        master_user_aggregated_df = pd.concat([master_user_aggregated_df, aggregated_user_df], join='inner')
 
-    repo_aggregated_df.to_csv(config_file["repository_data_file_name"], columns=repo_aggreated_columns, index=False)
-    user_aggregated_df.to_csv(config_file["user_data_file_name"], columns=user_aggreated_columns, index=False)
+    master_repo_aggregated_df.to_csv(config_file["repository_data_file_name"], columns=repo_aggregated_columns,
+                                     index=False)
+    master_user_aggregated_df.to_csv(config_file["user_data_file_name"], columns=user_aggregated_columns, index=False)
+input("Data processing done. Press Enter to finish the job")
