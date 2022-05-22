@@ -22,7 +22,7 @@ if __name__ == "__main__":
     # Define names for DataFrame columns. Optimize this layout later.
     # In general code below should be reorganized into classes and methods
     hours_start = 0
-    hours_end = 2  # max=23
+    hours_end = 23  # max=23
     config_file = read_json_data("config_file.json")
     raw_df_columns = ['id', 'type', 'actor', 'repo', 'payload', 'public', 'created_at',
                       'org', 'project_id', 'project_name', 'user_id', 'user_name']
